@@ -8,10 +8,12 @@ export default function ShortenForm() {
   const [customCode, setCustomCode] = useState("");
   const [shortenedUrl, setShortenedUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError("");
 
     try {
       const response = await fetch("/shorten-link", {
@@ -20,22 +22,25 @@ export default function ShortenForm() {
         body: JSON.stringify({ url: longUrl, code: customCode || undefined })
       });
       
-      if (!response.ok) throw new Error("Failed to shorten link");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error);
+      }
       
       const data = await response.json();
       setShortenedUrl(data.short_url);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error shortening link:", error);
-      alert("Nie udało się skrócić linka!");
+      setError(error.message);
     }
     
     setLoading(false);
   };
 
   return (
-    <Card className="max-w-md mx-auto mt-10 p-6 shadow-lg">
+    <Card className="max-w-11/12 mx-auto mt-10 p-1 shadow-2xl w-xl">
       <CardHeader>
-        <CardTitle className="text-lg">Skracacz linków</CardTitle>
+        <CardTitle className="text-lg text-center">Skracacz linków</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -59,9 +64,14 @@ export default function ShortenForm() {
         {shortenedUrl && (
           <p className="mt-4 text-center">
             Twój skrócony link: 
-            <a href={"/link/" + shortenedUrl} className="text-blue-500 ml-2" target="_blank" rel="noopener noreferrer">
-              {shortenedUrl}
+            <a href={document.URL + "link/" + shortenedUrl} className="text-blue-500 ml-2" target="_blank" rel="noopener noreferrer">
+              {document.URL + "link/" + shortenedUrl}
             </a>
+          </p>
+        )}
+        {error && (
+          <p className="mt-4 text-center text-red-500">
+            Błąd: {error}
           </p>
         )}
       </CardContent>

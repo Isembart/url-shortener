@@ -8,15 +8,17 @@ use rocket::fs::FileServer;
 
 use rocket::response::Redirect;
 use rocket::serde::{Serialize, Deserialize, json::Json};
-use rocket::form::{Form, FromForm};
 use rocket::State;
+use rocket::http::Status;
+use rocket::response::status;
 
-#[derive(FromForm)]
-#[derive(Debug)]
-struct LinkForm<'r> {
-    url: &'r str,
-    code: Option<&'r str>,
-}
+// use rocket::form::{FromForm};
+// #[derive(FromForm)]
+// #[derive(Debug)]
+// struct LinkForm<'r> {
+//     url: &'r str,
+//     code: Option<&'r str>,
+// }
 
 #[derive(Deserialize)]
 #[serde(crate= "rocket::serde")]
@@ -31,20 +33,44 @@ struct ShortLink {
     short_url: String,
 }
 
+#[derive(Serialize)]
+#[serde(crate = "rocket::serde")]
+struct ErrorResponse {
+    error: String,
+}
 
 #[post("/shorten-link", data = "<link>")]
-// fn shorten_link(link: Form<LinkForm<'_>>, db: &State<DbConn>) -> Json<ShortLink> {
-fn shorten_link(link: Json<LinkData<'_>>, db: &State<DbConn>) -> Json<ShortLink> {
-    let short_link = format!("{:x}", md5::compute(link.url));
+fn shorten_link(link: Json<LinkData<'_>>, db: &State<DbConn>) -> Result<Json<ShortLink>, status::Custom<Json<ErrorResponse>>> {
+    let short_link: String;
+
+    if let Some(code) = link.code {
+        println!("code: {}", code);
+        match db.get_long_url(code) {
+            Ok(response) => {
+                match response {
+                    Some(_) => {
+                        // there is already a URL with this code, we return error with explanation in JSON
+                        return Err(status::Custom(Status::Conflict, Json(ErrorResponse { error: "Jakiś pajac już zapisał link z takim kodem".to_string() })));
+                    },
+                    None => {
+                        short_link = code.to_string();
+                    },
+                }
+            },
+            Err(_) => {
+                // there is an error with the db connection
+                return Err(status::Custom(Status::InternalServerError, Json(ErrorResponse { error: "nie mogę się połączyć z bazą ~bazownik".to_string() })));
+            },
+        }
+    } else {
+        short_link = format!("{:x}", md5::compute(link.url))[..10].to_string();
+    }
+
     let long_url = link.url.to_string();
 
     match db.insert_url(&short_link, &long_url) {
-        Ok(_) => {
-            Json(ShortLink { short_url: short_link })
-        },
-        Err(_) => {
-            Json(ShortLink { short_url: "Error".to_string() })
-        },
+        Ok(_) => Ok(Json(ShortLink { short_url: short_link })),
+        Err(_) => Err(status::Custom(Status::InternalServerError, Json(ErrorResponse { error: "Nie udało się zapisać rekordu w bazie".to_string() }))),
     }
 }
 
