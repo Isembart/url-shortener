@@ -92,11 +92,15 @@ fn rocket() -> _ {
     let server_port = env::var("URL_SHORTENER_PORT").expect("You must set URL_SHORTENER_PORT in .env file");
     let server_port: u16 = server_port.parse().expect("PORT must be a valid number");
 
+    let server_address = env::var("URL_SHORTENER_ADDRESS").expect("You must set URL_SHORTENER_ADDRESS in .env file");
+    let server_address: &str = &server_address;
+
     let db = DbConn::new("urls.db").expect("Failed to connect to database");
     db.init_db().expect("Failed to initialize database");
 
     rocket::build()
     .configure(rocket::Config::figment().merge(("port", server_port)))
+    .configure(rocket::Config::figment().merge(("address", server_address)))
     .mount("/", routes![shorten_link, redirect])
     .mount("/", FileServer::from("./public/www"))
     .manage(db)
