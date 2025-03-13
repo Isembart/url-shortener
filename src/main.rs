@@ -99,8 +99,9 @@ fn rocket() -> _ {
     db.init_db().expect("Failed to initialize database");
 
     rocket::build()
-    .configure(rocket::Config::figment().merge(("port", server_port)))
-    .configure(rocket::Config::figment().merge(("address", server_address)))
+    .configure(rocket::Config::figment()
+        .merge(("port", server_port))
+        .merge(("address", server_address)))
     .mount("/", routes![shorten_link, redirect])
     .mount("/", FileServer::from("./public/www"))
     .manage(db)
