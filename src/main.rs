@@ -1,9 +1,12 @@
 #[macro_use] extern crate rocket;
 
 mod db;
+use std::env;
+
 use db::DbConn;
 
 use md5;
+use dotenv::dotenv;
 use rocket::fs::FileServer;
 
 use rocket::response::Redirect;
@@ -84,10 +87,16 @@ fn redirect(short_url: String, db: &State<DbConn>) -> Option<Redirect> {
 
 #[launch]
 fn rocket() -> _ {
+    dotenv().ok();
+    
+    let server_port = env::var("URL_SHORTENER_PORT").expect("You must set URL_SHORTENER_PORT in .env file");
+    let server_port: u16 = server_port.parse().expect("PORT must be a valid number");
+
     let db = DbConn::new("urls.db").expect("Failed to connect to database");
     db.init_db().expect("Failed to initialize database");
 
     rocket::build()
+    .configure(rocket::Config::figment().merge(("port", server_port)))
     .mount("/", routes![shorten_link, redirect])
     .mount("/", FileServer::from("./public/www"))
     .manage(db)

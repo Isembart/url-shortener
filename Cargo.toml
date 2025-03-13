@@ -7,3 +7,4 @@ edition = "2021"
 rocket = {version="0", features = [ "json" ]}
 rusqlite = { version = "0.34.0", features = ["bundled"] }
 md5 = "0"
+dotenv = "0"
