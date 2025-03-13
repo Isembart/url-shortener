@@ -1,0 +1,38 @@
+<html>
+
+<head>
+    <title>Zajebisty skracacz linków</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body>
+    <p>Witam w dupie i zapraszam<p>
+    <form id="shorten-form">
+        <input type="text" id="url-input" placeholder="Wklej linka">
+        <input type="submit" value="Skróć">
+    </form>
+    <p>Twój skrócony link: <a id="shortened-link" href="#" target="_blank"></a></p>
+    <script>
+        document.getElementById("shorten-form").addEventListener("submit", async function(event) {
+            event.preventDefault(); // Prevent page reload
+
+            const urlInput = document.getElementById("url-input").value;
+            const response = await fetch("/shorten-link", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({ url: urlInput })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const linkElement = document.getElementById("shortened-link");
+                linkElement.href = "/link/"+data.short_url;
+                linkElement.textContent = data.short_url;
+            } else {
+                alert("Nie udało się skrócić linka!");
+            }
+        });
+    </script>
+</body>
+</html>
