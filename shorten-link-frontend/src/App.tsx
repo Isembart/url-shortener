@@ -3,9 +3,9 @@ import LoginForm from "./components/login/LoginForm";
 
 function App() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <LoginForm />
+    <div className="min-h-screen flex items-center justify-center flex-col bg-gray-100">
       <ShortenForm />
+      <LoginForm />
     </div>
   );
 }

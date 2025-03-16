@@ -39,18 +39,20 @@ export default function LoginForm() {
     }
 
     return (
-        <Card>
+        <Card className="max-w-11/12 mx-auto mt-10 py-8 shadow-xl">
             <CardHeader>
-                <CardTitle>Login</CardTitle>
+                <CardTitle className="text-center text-2xl m-0">Login</CardTitle>
             </CardHeader>
             <CardContent>
                     <Input
+                        className="my-2"
                         type="text"
                         placeholder="Username"
                         value={username}
                         onChange={(e)=>setUsername(e.target.value)}
                     />
                     <Input
+                        className="my-2"
                         type="password"
                         placeholder="Password"
                         value={password}
