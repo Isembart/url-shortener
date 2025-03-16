@@ -2,4 +2,4 @@
 .env
 deploy.ps1
 /public/*
-.db
+urls.db

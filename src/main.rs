@@ -3,7 +3,7 @@
 mod db;
 use std::env;
 
-use db::DbConn;
+use db::{DbConn, UserError};
 
 use md5;
 use dotenv::dotenv;
@@ -22,6 +22,13 @@ mod cors;
 struct LinkData<'r>{
     url: &'r str,
     code: Option<&'r str>,
+}
+
+#[derive(Deserialize)]
+#[serde(crate= "rocket::serde")]
+struct UserData<'r> {
+    username: &'r str,
+    password: &'r str,
 }
 
 #[derive(Serialize)]
@@ -79,6 +86,26 @@ fn redirect(short_url: String, db: &State<DbConn>) -> Option<Redirect> {
     }
 }
 
+#[post("/create-user", data = "<user>")]
+fn create_user(user: Json<UserData<'_>>, db: &State<DbConn>) -> Result<Json<ShortLink>, status::Custom<Json<ErrorResponse>>> {
+ 
+    match db.create_user(user.username, user.password) {
+        Ok(_) => Ok(Json(ShortLink { short_url: user.username.to_string() })),
+        Err(UserError::UserAlreadyExists) => Err(status::Custom(Status::Conflict, Json(ErrorResponse {error:"Użytkownik już istnieje".to_string()}))),
+        Err(_) => Err(status::Custom(Status::InternalServerError, Json(ErrorResponse {error:"Nie udało się utworzyć użytkownika".to_string()}))),
+    }
+}
+
+#[post("/login", data = "<user>")]
+fn login(user: Json<UserData<'_>>, db: &State<DbConn>) -> Result<Json<ShortLink>, status::Custom<Json<ErrorResponse>>> {
+    match db.login(user.username, user.password) {
+        Ok(_) => Ok(Json(ShortLink { short_url: user.username.to_string() })),
+        Err(UserError::InvalidCredentials) => Err(status::Custom(Status::Unauthorized, Json(ErrorResponse {error:"Nieprawidłowe dane logowania".to_string()}))),
+        Err(UserError::DatabaseError(err)) => Err(status::Custom(Status::InternalServerError, Json(ErrorResponse {error: err.to_string()}))),
+        Err(_) => Err(status::Custom(Status::InternalServerError, Json(ErrorResponse {error:"Mowiąc kolokwialnie, coś się rozjebało".to_string()}))),
+    }
+}
+
 #[launch]
 fn rocket() -> _ {
     dotenv().ok();
@@ -97,7 +124,7 @@ fn rocket() -> _ {
     .configure(rocket::Config::figment()
         .merge(("port", server_port))
         .merge(("address", server_address)))
-    .mount("/", routes![shorten_link, redirect])
+    .mount("/", routes![shorten_link, redirect, create_user, login])
     .mount("/", FileServer::from("./public/www"))
     .manage(db)
 }
