@@ -3,6 +3,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+//get correct backend url from env
+const API_URL = import.meta.env.VITE_API_URL || document.URL;
+
 export default function ShortenForm() {
   const [longUrl, setLongUrl] = useState("");
   const [customCode, setCustomCode] = useState("");
@@ -16,7 +19,7 @@ export default function ShortenForm() {
     setError("");
 
     try {
-      const response = await fetch("/shorten-link", {
+      const response = await fetch(`${API_URL}/shorten-link`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: longUrl, code: customCode || undefined })
@@ -64,8 +67,8 @@ export default function ShortenForm() {
         {shortenedUrl && (
           <p className="mt-4 text-center">
             Twój skrócony link: 
-            <a href={document.URL + "link/" + shortenedUrl} className="text-blue-500 ml-2" target="_blank" rel="noopener noreferrer">
-              {document.URL + "link/" + shortenedUrl}
+            <a href={API_URL + "/link/" + shortenedUrl} className="text-blue-500 ml-2" target="_blank" rel="noopener noreferrer">
+              {API_URL + "/link/" + shortenedUrl}
             </a>
           </p>
         )}

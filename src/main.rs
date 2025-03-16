@@ -15,13 +15,7 @@ use rocket::State;
 use rocket::http::Status;
 use rocket::response::status;
 
-// use rocket::form::{FromForm};
-// #[derive(FromForm)]
-// #[derive(Debug)]
-// struct LinkForm<'r> {
-//     url: &'r str,
-//     code: Option<&'r str>,
-// }
+mod cors;
 
 #[derive(Deserialize)]
 #[serde(crate= "rocket::serde")]
@@ -66,7 +60,7 @@ fn shorten_link(link: Json<LinkData<'_>>, db: &State<DbConn>) -> Result<Json<Sho
             },
         }
     } else {
-        short_link = format!("{:x}", md5::compute(link.url))[..10].to_string();
+        short_link = format!("{:x}", md5::compute(link.url))[..6].to_string();
     }
 
     let long_url = link.url.to_string();
@@ -99,6 +93,7 @@ fn rocket() -> _ {
     db.init_db().expect("Failed to initialize database");
 
     rocket::build()
+    .attach(cors::cors_fairing())
     .configure(rocket::Config::figment()
         .merge(("port", server_port))
         .merge(("address", server_address)))

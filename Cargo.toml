@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 rocket = {version="0", features = [ "json" ]}
+rocket_cors = "0.6"
 rusqlite = { version = "0.34.0", features = ["bundled"] }
 md5 = "0"
 dotenv = "0"
