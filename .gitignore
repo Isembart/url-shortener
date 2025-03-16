@@ -1,5 +1,7 @@
 /target
 .env
-deploy.ps1
 /public/*
 urls.db
+/scripts/deploy_all.ps1
+/scripts/deploy_frontend.ps1
+/scripts/deploy_backend.ps1

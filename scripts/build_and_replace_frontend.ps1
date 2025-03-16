@@ -1,4 +1,4 @@
-$PROJECT_ROOT = $PSScriptRoot
+$PROJECT_ROOT = $PSScriptRoot + "\..\"
 $PUBLIC_WWW = "$PROJECT_ROOT\public\www"
 $FRONTEND_DIR = "$PROJECT_ROOT\shorten-link-frontend"
 
