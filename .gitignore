@@ -5,3 +5,4 @@ urls.db
 /scripts/deploy_all.ps1
 /scripts/deploy_frontend.ps1
 /scripts/deploy_backend.ps1
+node_modules
