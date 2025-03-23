@@ -31,26 +31,31 @@ impl DbConn {
 
     pub fn init_db(&self) -> Result<()> {
         let conn = self.conn.lock().unwrap();
-        conn.execute(
-            "CREATE TABLE IF NOT EXISTS urls (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                short TEXT UNIQUE NOT NULL,
-                long TEXT NOT NULL
-            )",
-            [],
-        )?;
-
+        
         //initiate users table
         conn.execute(
             "CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL
+                )",
+                [],
+            )?;
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS urls (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                short TEXT UNIQUE NOT NULL,
+                long TEXT NOT NULL,
+                FOREIGN KEY(user_id) REFERENCES users(id)
             )",
             [],
         )?;
-        Ok(())
-    }
+
+
+            Ok(())
+        }
 
     pub fn insert_url(&self, short: &str, long: &str) -> Result<()> {
         let conn = self.conn.lock().unwrap();

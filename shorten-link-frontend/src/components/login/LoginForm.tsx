@@ -1,11 +1,8 @@
-import { use, useState } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
-import { error } from "console";
-import { deprecate } from "util";
-
 
 
 const API_URL = import.meta.env.VITE_API_URL || document.URL;
@@ -59,38 +56,6 @@ export default function LoginForm() {
 
     });
 
-    /**
-     * @deprecated
-     */
-    const handleLoginForm = async () => {
-        const response = await fetch(`${API_URL}/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json"},
-            body: JSON.stringify({ username: username, password: password})
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error);
-        }
-    }
-
-    /**
-     * @deprecated
-     */
-    const handleRegisterForm = async () => {
-        const response = await fetch(`${API_URL}/create-user`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json"},
-            body: JSON.stringify({ username: username, password: password})
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error);
-        }
-
-    }
 
     return (
         <Card className="max-w-11/12 mx-auto mt-10 py-8 shadow-xl">

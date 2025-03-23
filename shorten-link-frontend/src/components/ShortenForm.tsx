@@ -28,7 +28,7 @@ export default function ShortenForm() {
 
   const mutation = useMutation({
     mutationFn: () => shortenLink(longUrl, customCode),
-    onSuccess: (data) => {
+    onSuccess: () => {
       setLongUrl("");
       setCustomCode("");
     },
