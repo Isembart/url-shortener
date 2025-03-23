@@ -1,12 +1,13 @@
 #[macro_use] extern crate rocket;
 
 mod db;
+mod model;
 use std::env;
-
 use db::{DbConn, UserError};
-
+use jsonwebtoken::{encode, EncodingKey, Header};
 use md5;
 use dotenv::dotenv;
+use model::{AuthenticatedUser, Claims, LoginResponse};
 use rocket::fs::FileServer;
 
 use rocket::response::Redirect;
@@ -44,9 +45,9 @@ struct ErrorResponse {
 }
 
 #[post("/shorten-link", data = "<link>")]
-fn shorten_link(link: Json<LinkData<'_>>, db: &State<DbConn>) -> Result<Json<ShortLink>, status::Custom<Json<ErrorResponse>>> {
+fn shorten_link(user: AuthenticatedUser, link: Json<LinkData<'_>>, db: &State<DbConn>) -> Result<Json<ShortLink>, status::Custom<Json<ErrorResponse>>> {
     let short_link: String;
-
+    
     if let Some(code) = link.code {
         println!("code: {}", code);
         match db.get_long_url(code) {
@@ -97,9 +98,25 @@ fn create_user(user: Json<UserData<'_>>, db: &State<DbConn>) -> Result<Json<Shor
 }
 
 #[post("/login", data = "<user>")]
-fn login(user: Json<UserData<'_>>, db: &State<DbConn>) -> Result<Json<ShortLink>, status::Custom<Json<ErrorResponse>>> {
+fn login(user: Json<UserData<'_>>, db: &State<DbConn>) -> Result<Json<LoginResponse>, status::Custom<Json<ErrorResponse>>> {
     match db.login(user.username, user.password) {
-        Ok(_) => Ok(Json(ShortLink { short_url: user.username.to_string() })),
+        Ok(_) => {
+            let claims = Claims{
+                sub: user.username.to_string().clone(),
+                exp: (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize,
+            };
+
+            let token = match encode(&Header::default(), &claims, &EncodingKey::from_secret(model::get_jwt_encoding_key())) {
+                Ok(token) => token,
+                Err(_) => {
+                    eprintln!("Error generating token");
+                    return Err(status::Custom(Status::InternalServerError, Json(ErrorResponse {error:"Nie udało się wygenerować tokena".to_string()})));
+                }
+            };
+            
+            // Ok(Json(ShortLink { short_url: user.username.to_string() }))
+            Ok(Json(LoginResponse{token}))
+        },
         Err(UserError::InvalidCredentials) => Err(status::Custom(Status::Unauthorized, Json(ErrorResponse {error:"Nieprawidłowe dane logowania".to_string()}))),
         Err(UserError::DatabaseError(err)) => Err(status::Custom(Status::InternalServerError, Json(ErrorResponse {error: err.to_string()}))),
         Err(_) => Err(status::Custom(Status::InternalServerError, Json(ErrorResponse {error:"Mowiąc kolokwialnie, coś się rozjebało".to_string()}))),

@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
+import API from "@/utils/api";
+import { useAuth } from "@/Auth/AuthProvider";
 
 
 const API_URL = import.meta.env.VITE_API_URL || document.URL;
@@ -11,23 +13,32 @@ export default function LoginForm() {
     const [username, setUsername] = useState("");
     const [loginPrompt, setLoginPrompt] = useState("");
     const [password, setPassword] = useState("");
+    const Auth = useAuth();
 
 
     const loginMutation = useMutation({
         mutationFn: async () => {
-            const response = await fetch(`${API_URL}/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json"},
-                body: JSON.stringify({username:username, password:password})
-            });
-            if(!response.ok){
-                const errorData = await response.json().catch(()=> null);
-                throw new Error(errorData?.error || "Failed to login");
+            try{
+                const response = await API.post(`${API_URL}/login`, {username,password});
+                return response.data;
+            }catch(error: any) {
+                throw new Error(error.response?.data?.error || "Failed to login");
             }
-            return response.json();
+            
+            // const response = await fetch(`${API_URL}/login`, {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json"},
+            //     body: JSON.stringify({username:username, password:password})
+            // });
+            // if(!response.ok){
+            //     const errorData = await response.json().catch(()=> null);
+            //     throw new Error(errorData?.error || "Failed to login");
+            // }
+            // return response.json();
         },
         onSuccess: (data) => {
-            setLoginPrompt(data.short_url);
+            setLoginPrompt("Logged in!");
+            Auth.setNewToken(data.token);
         },
         onError: (error) => {
             setLoginPrompt(error.message);
@@ -35,23 +46,28 @@ export default function LoginForm() {
     });
 
     const registerMutation = useMutation({
-        mutationFn: async() => {
-            const response = await fetch(`${API_URL}/create-user`,{
-                method: "POST",
-                headers: { "Content-Type": "application/json"},
-                body: JSON.stringify({username:username, password:password}),
-            });
-            if(!response.ok){
-                const errorData = await response.json().catch(()=> null);
-                throw new Error(errorData?.error || "Failed to login");
+        mutationFn: async () => {
+            try {
+                const response = await API.post(`${API_URL}/create-user`, {
+                    username,
+                    password
+                });
+    
+                return response.data; // Return only the data, no need to return the full response object
+            } catch (error: any) {
+                // Extract a meaningful error message
+                const errorMessage = error.response?.data?.error || "Failed to create user";
+                
+                // Throw to trigger React Query’s onError
+                throw new Error(errorMessage);
             }
-            return response.json();
         },
         onSuccess: (data) => {
-            setLoginPrompt(data.short_url);
+            setLoginPrompt("Successfully created user!");
+            Auth.setNewToken(data.token);
         },
-        onError: (data) => {
-            setLoginPrompt(data.message);
+        onError: (error) => {
+            setLoginPrompt(error.message);
         }
 
     });

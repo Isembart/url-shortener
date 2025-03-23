@@ -10,3 +10,7 @@ rusqlite = { version = "0.34.0", features = ["bundled"] }
 md5 = "0"
 dotenv = "0"
 bcrypt = "0.15"
+serde = { version = "1.0", features = ["derive"] }
+chrono = "0.4.40"
+jsonwebtoken = "9.2.0"
+rand="0"

@@ -3,30 +3,44 @@ import { useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import API from "@/utils/api";
 
 // Get correct backend URL from env
 const API_URL = import.meta.env.VITE_API_URL || document.URL;
 
 async function shortenLink(longUrl: string, customCode?: string) {
-  const response = await fetch(`${API_URL}/shorten-link`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url: longUrl, code: customCode || undefined }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || "Failed to shorten link");
+  // const response = await fetch(`${API_URL}/shorten-link`, {
+  //   method: "POST",
+  //   headers: { "Content-Type": "application/json" },
+  //   body: JSON.stringify({ url: longUrl, code: customCode || undefined }),
+  // });
+  try{
+    const response = await API.post(`${API_URL}/shorten-link`, {url:longUrl, code: customCode || undefined})
+    return response.data;
+  } catch(error:any){
+    throw new Error(error.response?.data?.error || "Failed to shorten the link");
   }
 
-  return response.json();
+    // .then((response) => {
+    //   return response.data;
+    // })
+    // .catch((error) => {
+    //   throw new Error(error.data || "Failed to shorten the link");
+    // })
+
+  // if (!response.) {
+  //   const errorData = await response.json();
+  //   throw new Error(errorData.error || "Failed to shorten link");
+  // }
+
+  // return response.json();
 }
 
 export default function ShortenForm() {
   const [longUrl, setLongUrl] = useState("");
   const [customCode, setCustomCode] = useState("");
 
-  const mutation = useMutation({
+  const shortenLinkMutation = useMutation({
     mutationFn: () => shortenLink(longUrl, customCode),
     onSuccess: () => {
       setLongUrl("");
@@ -36,7 +50,7 @@ export default function ShortenForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate();
+    shortenLinkMutation.mutate();
   };
 
   return (
@@ -59,28 +73,28 @@ export default function ShortenForm() {
             value={customCode}
             onChange={(e) => setCustomCode(e.target.value)}
           />
-          <Button type="submit" disabled={mutation.isPending} className="w-full">
-            {mutation.isPending ? "Przetwarzanie..." : "Skróć link"}
+          <Button type="submit" disabled={shortenLinkMutation.isPending} className="w-full">
+            {shortenLinkMutation.isPending ? "Przetwarzanie..." : "Skróć link"}
           </Button>
         </form>
 
-        {mutation.isSuccess && (
+        {shortenLinkMutation.isSuccess && (
           <p className="mt-4 text-center">
             Twój skrócony link:{" "}
             <a
-              href={`${API_URL}/link/${mutation.data.short_url}`}
+              href={`${API_URL}/link/${shortenLinkMutation.data.short_url}`}
               className="text-blue-500 ml-2"
               target="_blank"
               rel="noopener noreferrer"
             >
-              {API_URL}/link/{mutation.data.short_url}
+              {API_URL}/link/{shortenLinkMutation.data.short_url}
             </a>
           </p>
         )}
 
-        {mutation.isError && (
+        {shortenLinkMutation.isError && (
           <p className="mt-4 text-center text-red-500">
-            Błąd: {(mutation.error as Error).message}
+            Błąd: {(shortenLinkMutation.error as Error).message}
           </p>
         )}
       </CardContent>
