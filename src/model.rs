@@ -1,29 +1,23 @@
-use std::convert::Infallible;
 
-use jsonwebtoken::{decode, Algorithm, DecodingKey, EncodingKey, Validation};
+use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use rand::{thread_rng, RngCore};
-use rocket::{http::Status, request::{self, FromRequest, Outcome}, Request};
+use rocket::{http::Status, request::{FromRequest, Outcome}, Request};
 use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize)]
-pub struct LoginInfo{
-    pub username: String,
-    pub password: String,
-}
 
 #[derive(Serialize)]
 pub struct LoginResponse{
     pub token: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Claims{
     pub sub: String,
     pub exp: usize,
+    pub persistent: bool,
 }
 
 #[derive(Debug)]
-pub struct AuthError(pub String);
+pub struct AuthError();
 
 impl rocket::response::Responder<'_, 'static> for AuthError {
     fn respond_to(self, _: &'_ rocket::Request) -> rocket::response::Result<'static> {
@@ -42,17 +36,12 @@ impl<'r> FromRequest<'r> for AuthenticatedUser {
     async fn from_request(req: &'r Request<'_>) -> rocket::request::Outcome<Self, Self::Error> {
         // Extract the "Authorization" header
         if let Some(auth_header) = req.headers().get_one("Authorization") {
-            // Bearer token format: "Bearer <token>"
-            if let Some(token) = auth_header.strip_prefix("Bearer ") {
-                match validate_jwt_token(token) {
-                    Ok(claims) => Outcome::Success(AuthenticatedUser(claims)),
-                    Err(e) => Outcome::Error((Status::Unauthorized, e)),
-                }
-            } else {
-                Outcome::Error((Status::Unauthorized, AuthError("Invalid Authorization format".to_string())))
+            match validate_jwt_token(auth_header) {
+                Ok(claims) => Outcome::Success(AuthenticatedUser(claims)),
+                Err(e) => Outcome::Error((Status::Forbidden, e)),
             }
         } else {
-            Outcome::Error((Status::Unauthorized, AuthError("Authorization header missing".to_string())))
+            Outcome::Error((Status::Forbidden, AuthError()))
         }
     }
 }
@@ -84,6 +73,6 @@ pub fn validate_jwt_token(token: &str) -> Result<Claims, AuthError> {
     
     match decode::<Claims>(token, &decoding_key, &validation) {
         Ok(token_data) => Ok(token_data.claims),
-        Err(_) => Err(AuthError("Invalid token.".to_string())),
+        Err(_) => Err(AuthError()),
     }
 }

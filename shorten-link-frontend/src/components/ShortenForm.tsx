@@ -3,49 +3,34 @@ import { useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import API from "@/utils/api";
+import {API} from "@/utils/api";
 
 // Get correct backend URL from env
 const API_URL = import.meta.env.VITE_API_URL || document.URL;
 
-async function shortenLink(longUrl: string, customCode?: string) {
-  // const response = await fetch(`${API_URL}/shorten-link`, {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify({ url: longUrl, code: customCode || undefined }),
-  // });
-  try{
-    const response = await API.post(`${API_URL}/shorten-link`, {url:longUrl, code: customCode || undefined})
-    return response.data;
-  } catch(error:any){
-    throw new Error(error.response?.data?.error || "Failed to shorten the link");
-  }
-
-    // .then((response) => {
-    //   return response.data;
-    // })
-    // .catch((error) => {
-    //   throw new Error(error.data || "Failed to shorten the link");
-    // })
-
-  // if (!response.) {
-  //   const errorData = await response.json();
-  //   throw new Error(errorData.error || "Failed to shorten link");
-  // }
-
-  // return response.json();
-}
 
 export default function ShortenForm() {
   const [longUrl, setLongUrl] = useState("");
   const [customCode, setCustomCode] = useState("");
 
   const shortenLinkMutation = useMutation({
-    mutationFn: () => shortenLink(longUrl, customCode),
-    onSuccess: () => {
-      setLongUrl("");
-      setCustomCode("");
+    mutationFn: async () => {
+      try{
+        const response = await API.post(`${API_URL}/shorten-link`, {url:longUrl, code: (customCode || undefined)}, {withCredentials:true})
+        return response.data;
+      }catch(err){
+        console.log(err);
+        throw err;
+      }
     },
+    onSuccess: (data) => {
+      // setLongUrl("");
+      // setCustomCode("");
+      console.log("data: ", data);
+    },
+    onError: (error) => {
+    console.log("error: ", error);  
+    }
   });
 
   const handleSubmit = (e: React.FormEvent) => {

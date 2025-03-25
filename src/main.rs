@@ -12,8 +12,9 @@ use rocket::fs::FileServer;
 
 use rocket::response::Redirect;
 use rocket::serde::{Serialize, Deserialize, json::Json};
+use rocket::time::{Duration, OffsetDateTime};
 use rocket::State;
-use rocket::http::Status;
+use rocket::http::{Cookie, CookieJar, Status};
 use rocket::response::status;
 
 mod cors;
@@ -26,10 +27,10 @@ struct LinkData<'r>{
 }
 
 #[derive(Deserialize)]
-#[serde(crate= "rocket::serde")]
 struct UserData<'r> {
     username: &'r str,
     password: &'r str,
+    persistent: Option<bool>,
 }
 
 #[derive(Serialize)]
@@ -73,7 +74,7 @@ fn shorten_link(user: AuthenticatedUser, link: Json<LinkData<'_>>, db: &State<Db
 
     let long_url = link.url.to_string();
 
-    match db.insert_url(&short_link, &long_url) {
+    match db.insert_url(&short_link, &long_url, db.get_user_id(&user.0.sub).unwrap().unwrap()) {
         Ok(_) => Ok(Json(ShortLink { short_url: short_link })),
         Err(_) => Err(status::Custom(Status::InternalServerError, Json(ErrorResponse { error: "Nie udało się zapisać rekordu w bazie".to_string() }))),
     }
@@ -97,15 +98,16 @@ fn create_user(user: Json<UserData<'_>>, db: &State<DbConn>) -> Result<Json<Shor
     }
 }
 
-#[post("/login", data = "<user>")]
-fn login(user: Json<UserData<'_>>, db: &State<DbConn>) -> Result<Json<LoginResponse>, status::Custom<Json<ErrorResponse>>> {
-    match db.login(user.username, user.password) {
+#[post("/login", data = "<login_info>")]
+fn login(jar: &CookieJar<'_>, login_info: Json<UserData<'_>>, db: &State<DbConn>) -> Result<Json<LoginResponse>, status::Custom<Json<ErrorResponse>>> {
+    match db.login(login_info.username, login_info.password) {
         Ok(_) => {
             let claims = Claims{
-                sub: user.username.to_string().clone(),
+                sub: login_info.username.to_string().clone(),
                 exp: (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize,
+                persistent: login_info.persistent.unwrap_or(false),
             };
-
+           
             let token = match encode(&Header::default(), &claims, &EncodingKey::from_secret(model::get_jwt_encoding_key())) {
                 Ok(token) => token,
                 Err(_) => {
@@ -113,6 +115,34 @@ fn login(user: Json<UserData<'_>>, db: &State<DbConn>) -> Result<Json<LoginRespo
                     return Err(status::Custom(Status::InternalServerError, Json(ErrorResponse {error:"Nie udało się wygenerować tokena".to_string()})));
                 }
             };
+ 
+            let refresh_claims = Claims {
+                exp: match claims.persistent {
+                    true => (chrono::Utc::now() + chrono::Duration::days(30)).timestamp() as usize,
+                    false => (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize,
+                },
+                ..claims
+            };
+
+            let refresh_token = match encode(&Header::default(), &refresh_claims, &EncodingKey::from_secret(model::get_jwt_encoding_key())) {
+                Ok(token) => token,
+                Err(_) => {
+                    eprintln!("Error generating token");
+                    return Err(status::Custom(Status::InternalServerError, Json(ErrorResponse {error:"Nie udało się wygenerować tokena".to_string()})));
+                }
+            };
+
+            let refresh_token_duration = match claims.persistent {
+                true => Duration::days(30),
+                false => Duration::hours(1),
+            };
+            //send the refresh token in a http-only cookie
+            jar.add(Cookie::build(("refresh_token", refresh_token))
+                .http_only(true)
+                .secure(true)
+                .expires(OffsetDateTime::now_utc() + refresh_token_duration)
+                .max_age(refresh_token_duration)
+                .same_site(rocket::http::SameSite::Lax));
             
             // Ok(Json(ShortLink { short_url: user.username.to_string() }))
             Ok(Json(LoginResponse{token}))
@@ -122,6 +152,78 @@ fn login(user: Json<UserData<'_>>, db: &State<DbConn>) -> Result<Json<LoginRespo
         Err(_) => Err(status::Custom(Status::InternalServerError, Json(ErrorResponse {error:"Mowiąc kolokwialnie, coś się rozjebało".to_string()}))),
     }
 }
+
+#[get("/refresh")]
+fn refresh(jar: &CookieJar<'_>) -> Result<Json<LoginResponse>, status::Custom<Json<ErrorResponse>>> {
+    if let Some(cookie) = jar.get("refresh_token") {
+        let token = cookie.value();
+        match model::validate_jwt_token(token) {
+            Ok(claims) => {
+                let new_claims = Claims{
+                    sub: claims.sub.clone(),
+                    exp: (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize,
+                    persistent: claims.persistent,
+                };
+                let new_token = match encode(&Header::default(), &new_claims, &EncodingKey::from_secret(model::get_jwt_encoding_key())) {
+                    Ok(token) => token,
+                    Err(_) => return Err(status::Custom(Status::InternalServerError, Json(ErrorResponse {error:"Nie udało się wygenerować tokena".to_string()}))),
+                };
+
+                //before returning the new token, also make a new refresh token
+                let refresh_claims = Claims {
+                    exp: match claims.persistent {
+                        true => (chrono::Utc::now() + chrono::Duration::days(30)).timestamp() as usize,
+                        false => (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize,
+                    },
+                    ..new_claims
+                };
+              
+                let refresh_token = match encode(&Header::default(), &refresh_claims, &EncodingKey::from_secret(model::get_jwt_encoding_key())) {
+                    Ok(token) => token,
+                    Err(_) => {
+                        eprintln!("Error generating token");
+                        return Err(status::Custom(Status::InternalServerError, Json(ErrorResponse {error:"Nie udało się wygenerować tokena".to_string()})));
+                    }
+                };
+
+                let refresh_token_duration = match claims.persistent {
+                    true => Duration::days(30),
+                    false => Duration::hours(1),
+                };
+                //send the refresh token in a http-only cookie
+                jar.add(Cookie::build(("refresh_token", refresh_token))
+                .http_only(true)
+                .secure(true)
+                .expires(OffsetDateTime::now_utc() + refresh_token_duration)
+                .max_age(refresh_token_duration)
+                .same_site(rocket::http::SameSite::Lax));
+
+                Ok(Json(LoginResponse{token: new_token}))
+            },
+            Err(_) => Err(status::Custom(Status::Unauthorized, Json(ErrorResponse {error:"Nieprawidłowy token".to_string()}))),
+        }
+    } else {
+        Err(status::Custom(Status::Unauthorized, Json(ErrorResponse {error:"Brak tokena".to_string()})))
+    }
+
+
+}
+
+#[get("/logout")]
+fn logout(user: AuthenticatedUser, jar: &CookieJar<'_>) -> Result<Json<ErrorResponse>, status::Custom<Json<ErrorResponse>>> {
+    println!("User {} logged out", user.0.sub);
+    if jar.get("refresh_token").is_some() {
+        jar.remove("refresh_token");
+    }
+    
+    Ok(Json(ErrorResponse {error:"Zostałeś wylogowany".to_string()}))
+}
+
+#[get("/whoami")]
+fn whoami(user: AuthenticatedUser) -> Json<Claims> {
+    Json(user.0)
+}
+
 
 #[launch]
 fn rocket() -> _ {
@@ -141,7 +243,7 @@ fn rocket() -> _ {
     .configure(rocket::Config::figment()
         .merge(("port", server_port))
         .merge(("address", server_address)))
-    .mount("/", routes![shorten_link, redirect, create_user, login])
+    .mount("/", routes![shorten_link, redirect, create_user, login, refresh, whoami, logout])
     .mount("/", FileServer::from("./public/www"))
     .manage(db)
 }

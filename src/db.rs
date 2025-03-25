@@ -57,12 +57,12 @@ impl DbConn {
             Ok(())
         }
 
-    pub fn insert_url(&self, short: &str, long: &str) -> Result<()> {
+    pub fn insert_url(&self, short: &str, long: &str, userid: u32) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
-            "INSERT INTO urls (short, long) VALUES (?1, ?2) 
+            "INSERT INTO urls (short, long, user_id) VALUES (?1, ?2, ?3) 
              ON CONFLICT(short) DO NOTHING",
-            params![short, long],
+            params![short, long, userid],
         )?;
         Ok(())
     }
@@ -108,12 +108,23 @@ impl DbConn {
             |row| row.get(0),
         ).map_err(|_| UserError::InvalidCredentials)?;
 
-        print!("db_password: {}", db_password);
-        print!("password: {}", password);
         if bcrypt::verify(password, &db_password).unwrap_or(false) {
             Ok("Login successful".to_string())
         } else {
             Err(UserError::InvalidCredentials)
+        }
+    }
+
+    pub fn get_user_id(&self, username: &str) -> Result<Option<u32>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT id FROM users WHERE username = ?1")?;
+        let mut rows = stmt.query(params![username])?;
+
+        if let Some(row) = rows.next()? {
+            let user_id: u32 = row.get(0)?;
+            Ok(Some(user_id))
+        } else {
+            Ok(None)
         }
     }
 

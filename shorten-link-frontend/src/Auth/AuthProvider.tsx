@@ -1,6 +1,7 @@
 // import { useQuery } from "@tanstack/react-query";
-import API from "@/utils/api";
-import { createContext, useContext, useLayoutEffect, useState } from "react"
+import LoginForm from "@/components/login/LoginForm";
+import { API, API_URL} from "@/utils/api";
+import { createContext, useContext, useEffect, useLayoutEffect, useState } from "react"
 
 
 type AuthContextType = {
@@ -8,7 +9,6 @@ type AuthContextType = {
     setNewToken: (token: String) => void,
 }
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const API_URL = import.meta.env.VITE_API_URL || document.URL;
 
 export const useAuth = () => {
     const authContext = useContext(AuthContext);
@@ -27,8 +27,8 @@ export const AuthProvider = ({children}: {children: ReactNode}) => {
    
     useLayoutEffect(() => {
         const authInterceptor = API.interceptors.request.use((config) => {
-            if(!(token==="") && !config._retry) {
-                config.headers.Authorization = `Bearer ${token}`;
+            if(!(token==="") && !(config as any)._retry) {
+                config.headers.Authorization = `${token}`;
             }
             return config;
         })
@@ -36,39 +36,52 @@ export const AuthProvider = ({children}: {children: ReactNode}) => {
         return () => {
             API.interceptors.request.eject(authInterceptor);
         }
-    }, [token])
-    
-    //response
+    }, [token]);
+
+    const refreshToken = async () => {
+        try{
+            const response = await API.get(`${API_URL}/refresh`,{withCredentials: true});
+            
+            return response.data.token;
+
+        } catch{
+            setToken("");
+        }
+    };
     useLayoutEffect(() => {
         const refreshInterceptor = API.interceptors.response.use(
             (response) => response,
             async (error) => {
                 const originalRequest = error.config;
+                console.log("Error: ", error.response.status, error.response.data.message);
+                if( error.response.status === 403 ){
+                    try{
+                        const response = await API.get(`${API_URL}/refresh`,{withCredentials: true});
+                        originalRequest.headers.Authorization = `${response.data.token}`;
+                        originalRequest._retry = true;
+                        return API(originalRequest);
+                    } catch {
+                        setToken("");
+                    }
 
-                if(
-                    error.response.status === 403 &&
-                    error.response.data.message === 'Unauthorized'
-                ) try{
-                    console.log("Trying to refresh the token");
-                    const response = await API.get(`${API_URL}/api/refreshToken`);
-                    setToken(response.data.accessToken);
-
-                    originalRequest.headers.Authorization = `Bearer ${response.data.accessToken}`;
-                    originalRequest._retry = true;
-                    return API(originalRequest);
-                } catch {
-                    setToken("");
-                }
+                } 
             })
-    })
+        return () => {
+            API.interceptors.request.eject(refreshInterceptor);
+        }
+    }, [token])
 
     const setNewToken = (newToken: any) => {
         setToken(newToken);
     };
 
+    useEffect(() => {
+        refreshToken();
+    },[]);
+
     return(
         <AuthContext.Provider value={{token, setNewToken}}>
-            {children}
+            {token!=="" ? children : <LoginForm/>}
         </AuthContext.Provider>
     )
 };
