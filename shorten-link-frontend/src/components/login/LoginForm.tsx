@@ -21,7 +21,7 @@ export default function LoginForm() {
     const loginMutation = useMutation({
         mutationFn: async () => {
             try{
-                const response = await API.post(`${API_URL}/login`, {username,password}, {withCredentials:true});
+                const response = await API.post(`${API_URL}/login`, {username,password, persistent}, {withCredentials:true});
                 return response.data;
             }catch(error: any) {
                 throw new Error(error.response?.data?.error || "Failed to login");
@@ -52,7 +52,8 @@ export default function LoginForm() {
             try {
                 const response = await API.post(`${API_URL}/create-user`, {
                     username,
-                    password
+                    password,
+                    persistent
                 });
     
                 return response.data; // Return only the data, no need to return the full response object
@@ -66,7 +67,6 @@ export default function LoginForm() {
         },
         onSuccess: (data) => {
             setLoginPrompt("Successfully created user!");
-            Auth.setNewToken(data.token);
         },
         onError: (error) => {
             setLoginPrompt(error.message);
@@ -81,7 +81,6 @@ export default function LoginForm() {
                 <CardTitle className="text-center text-2xl m-0">Login</CardTitle>
             </CardHeader>
             <CardContent>
-                <form>
                     <Input
                         className="my-2"
                         type="text"
@@ -101,7 +100,7 @@ export default function LoginForm() {
 
                    
                     <div className="items-top flex space-x-2">
-                    <Checkbox id="persistent" />
+                    <Checkbox id="persistent" onCheckedChange={(e:boolean) => {setPersistent(e)}}/>
                         <div className="grid gap-1.5 leading-none">
                             <label htmlFor="persistent" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                 Don't log me out
@@ -114,7 +113,6 @@ export default function LoginForm() {
 
                     <Button onClick={() => {registerMutation.mutate()}} disabled={(registerMutation.isPending || loginMutation.isPending)}> Create Account </Button>
                     <p>{loginPrompt}</p>
-                </form>
             </CardContent>
 
         </Card>

@@ -29,6 +29,7 @@ export const AuthProvider = ({children}: {children: ReactNode}) => {
         const authInterceptor = API.interceptors.request.use((config) => {
             if(!(token==="") && !(config as any)._retry) {
                 config.headers.Authorization = `${token}`;
+                config.withCredentials = true;
             }
             return config;
         })
@@ -41,7 +42,7 @@ export const AuthProvider = ({children}: {children: ReactNode}) => {
     const refreshToken = async () => {
         try{
             const response = await API.get(`${API_URL}/refresh`,{withCredentials: true});
-            
+            setToken(response.data.token); 
             return response.data.token;
 
         } catch{
