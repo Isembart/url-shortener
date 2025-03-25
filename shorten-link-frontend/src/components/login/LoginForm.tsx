@@ -65,7 +65,7 @@ export default function LoginForm() {
                 throw new Error(errorMessage);
             }
         },
-        onSuccess: (data) => {
+        onSuccess: () => {
             setLoginPrompt("Successfully created user!");
         },
         onError: (error) => {
