@@ -78,7 +78,7 @@ async fn redirect(State(db): State<Arc<DbConn>>, extract::Path(short_url): extra
 
 async fn create_user(State(db): State<Arc<DbConn>>, extract::Json(login_info): extract::Json<LoginFormData>) -> Result<OkResponse<String>, ApiError>{
     match db.create_user(&login_info.username, &login_info.password) {
-        Ok(_) => Ok(OkResponse::new(format!("User {} created successfuly!", login_info.username))),
+        Ok(_) => Ok(OkResponse::new(format!("User {} created successfully!", login_info.username))),
         Err(UserError::UserAlreadyExists) => Err(ApiError::UserAlreadyExists),
         Err(_) => Err(ApiError::InternalServerError),
     }
