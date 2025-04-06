@@ -13,6 +13,7 @@ use tower_cookies::cookie;
 use tower_cookies::CookieManagerLayer;
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
+use std::net::ToSocketAddrs;
 use std::sync::Arc;
 use axum::Router;
 use db::{DbConn, UserError};
@@ -227,15 +228,15 @@ async fn main() {
     let server_address = std::env::var("URL_SHORTENER_ADDRESS")
         .expect("You must set URL_SHORTENER_ADDRESS in .env file");
 
-    let listener_address: std::net::SocketAddr = format!("{}:{}", server_address, server_port)
-        .parse()
-        .expect("Invalid server address");
-
-
+    // Resolve the address to support both IPv4 and IPv6
+    let listener_address = format!("{}:{}", server_address, server_port).to_socket_addrs()
+        .expect("Invalid server address")
+        .next()
+        .expect("Could not resolve address");
 
     let main_router: Router = Router::new()
         .fallback_service(ServeDir::new("./public/www"))
-        .route("/test", axum::routing::get(|| async {"Hello, world!"}))
+        .route("/test", axum::routing::get(|| async { "Hello, world!" }))
         .route("/login", axum::routing::post(login))
         .route("/shorten-link", axum::routing::post(shorten_link))
         .route("/whoami", axum::routing::get(whoami))
@@ -249,7 +250,7 @@ async fn main() {
         .with_state(db)
         ;
 
-    println!("Started server at, http://{}",&listener_address);
+    println!("Started server at http://{}", &listener_address);
 
     let listener = tokio::net::TcpListener::bind(&listener_address).await.unwrap();
     axum::serve(listener, main_router).await.unwrap();
