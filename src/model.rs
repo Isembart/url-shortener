@@ -36,8 +36,11 @@ where S: Send + Sync
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         // Extract the "Authorization" header
         if let Some(auth_header) = parts.headers.get("Authorization") {
-            match validate_jwt_token(auth_header.to_str().unwrap()) {
-                Ok(claims) => Ok(AuthenticatedUser(claims)),
+            match auth_header.to_str() {
+                Ok(auth_str) => match validate_jwt_token(auth_str) {
+                    Ok(claims) => Ok(AuthenticatedUser(claims)),
+                    Err(_) => Err(AuthError),
+                },
                 Err(_) => Err(AuthError),
             }
         } else {
