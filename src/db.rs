@@ -129,4 +129,18 @@ impl DbConn {
         }
     }
 
+    pub fn get_user_links(&self, user_id: u32) -> Result<Vec<(String, String)>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare("SELECT short, long FROM urls WHERE user_id = ?1")?;
+        let rows = stmt.query_map(params![user_id], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })?;
+
+        let mut links = Vec::new();
+        for link in rows {
+            links.push(link?);
+        }
+        Ok(links)
+    }
+
 }

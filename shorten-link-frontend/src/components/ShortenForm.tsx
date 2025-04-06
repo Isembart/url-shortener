@@ -38,7 +38,7 @@ export default function ShortenForm() {
   };
 
   return (
-    <Card className="max-w-11/12 mx-auto mt-10 p-1 shadow-xl w-xl">
+    <Card className="max-w-11/12 mx-auto mt-10 p-1 shadow-xl w-xl bg-white">
       <CardHeader>
         <CardTitle className="text-lg text-center">Skracacz linków</CardTitle>
       </CardHeader>

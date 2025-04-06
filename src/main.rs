@@ -85,6 +85,14 @@ async fn create_user(State(db): State<Arc<DbConn>>, extract::Json(login_info): e
     }
 }
 
+async fn get_user_links(user: AuthenticatedUser, State(db): State<Arc<DbConn>>) -> Result<OkResponse<Vec<(String,String)>>, ApiError> {
+    let user_id = db.get_user_id(&user.0.sub).unwrap().unwrap();
+    match db.get_user_links(user_id) {
+        Ok(links) => Ok(OkResponse::new(links)),
+        Err(_) => Err(ApiError::InternalServerError),
+    }
+}
+
 
 async fn refresh(cookies: Cookies) -> Result<OkResponse<String>, ApiError> {
     if let Some(refresh_cookie) = cookies.get("refresh_token") {
@@ -244,6 +252,7 @@ async fn main() {
         .route("/refresh", axum::routing::get(refresh))
         .route("/create-user", axum::routing::post(create_user))
         .route("/link/{short_url}", axum::routing::get(redirect))
+        .route("/get-user-links", axum::routing::get(get_user_links))
         .layer(CookieManagerLayer::new())
         .layer(CorsLayer::very_permissive())
         .layer(TraceLayer::new_for_http())

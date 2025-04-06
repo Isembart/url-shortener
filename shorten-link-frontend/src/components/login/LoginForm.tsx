@@ -75,7 +75,7 @@ export default function LoginForm() {
 
 
     return (
-        <Card className="max-w-xl mx-auto mt-10 py-8 shadow-xl">
+        <Card className="max-w-xl mx-auto mt-10 py-8 shadow-xl bg-white">
             <CardHeader>
                 <CardTitle className="text-center text-2xl m-0">Login</CardTitle>
             </CardHeader>
