@@ -42,6 +42,7 @@ pub struct ErrResponseBody {
 #[derive(Clone)]
 pub enum ApiError{
     AuthError,
+    Forbidden,
     NotFound,
     CannotGenerateToken,
     InvalidCredentials,
@@ -61,7 +62,8 @@ impl ApiError{
             ApiError::InvalidCredentials => "Invalid Credentials",
             ApiError::InternalServerError => "Internal server error",
             ApiError::UserAlreadyExists => "User already exists",
-            ApiError::Conflict => "Data already exists"
+            ApiError::Conflict => "Data already exists",
+            ApiError::Forbidden => "Forbidden",
 
 
         }
@@ -80,7 +82,8 @@ impl ApiError{
             ApiError::InternalServerError => StatusCode::INTERNAL_SERVER_ERROR,
             ApiError::UserAlreadyExists => StatusCode::CONFLICT,
             ApiError::Conflict => StatusCode::CONFLICT,
-            
+            ApiError::Forbidden => StatusCode::FORBIDDEN,            
+
 
         }
     }

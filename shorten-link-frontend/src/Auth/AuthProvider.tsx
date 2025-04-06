@@ -54,12 +54,12 @@ export const AuthProvider = ({children}: {children: ReactNode}) => {
             (response) => response,
             async (error) => {
                 const originalRequest = error.config;
-                console.log("Error: ", error.response.status, error.response.data.message);
-                if( error.response.status === 403 ){
+                if( error.response.status === 401) {
                     try{
                         const response = await API.get(`${API_URL}/refresh`,{withCredentials: true});
                         originalRequest.headers.Authorization = `${response.data.data}`;
                         originalRequest._retry = true;
+                        setToken(response.data.data);
                         return API(originalRequest);
                     } catch {
                         setToken("");

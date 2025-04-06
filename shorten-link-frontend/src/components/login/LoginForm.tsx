@@ -3,12 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Input } from "../ui/input";
 import { Button } from "@/components/ui/button";
 import { useMutation } from "@tanstack/react-query";
-import {API} from "@/utils/api";
+import {API, API_URL} from "@/utils/api";
 import { useAuth } from "@/Auth/AuthProvider";
 import { Checkbox } from "../ui/checkbox";
 
 
-const API_URL = import.meta.env.VITE_API_URL || document.URL;
 
 export default function LoginForm() {
     const [username, setUsername] = useState("");

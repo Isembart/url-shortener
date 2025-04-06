@@ -3,10 +3,9 @@ import { useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {API} from "@/utils/api";
+import {API, API_URL} from "@/utils/api";
 
-// Get correct backend URL from env
-const API_URL = import.meta.env.VITE_API_URL || document.URL;
+
 
 
 export default function ShortenForm() {

@@ -134,10 +134,10 @@ async fn refresh(cookies: Cookies) -> Result<OkResponse<String>, ApiError> {
                 Ok(OkResponse::new(new_token))
             },
             // Err(_) => Err(status::Custom(Status::Unauthorized, Json(ErrorResponse {error:"Nieprawidłowy token".to_string()}))),
-            Err(_) => Err(ApiError::AuthError)
+            Err(_) => Err(ApiError::Forbidden)
         }
     } else {
-        Err(ApiError::AuthError)
+        Err(ApiError::Forbidden)
         // Err(status::Custom(Status::Unauthorized, Json(ErrorResponse {error:"Brak tokena".to_string()})))
     }
 }
