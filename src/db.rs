@@ -4,6 +4,7 @@ use std::sync::Mutex;
 
 use bcrypt::{hash, DEFAULT_COST};
 
+
 pub struct DbConn {
     pub conn: Mutex<Connection>, // Thread-safe shared connection
 }
@@ -67,16 +68,16 @@ impl DbConn {
         Ok(())
     }
 
-    pub fn get_long_url(&self, short: &str) -> Result<Option<String>> {
+    pub fn get_long_url(&self, short: String) -> Option<String> {
         let conn = self.conn.lock().unwrap();
-        let mut stmt = conn.prepare("SELECT long FROM urls WHERE short = ?1")?;
-        let mut rows = stmt.query(params![short])?;
+        let mut stmt = conn.prepare("SELECT long FROM urls WHERE short = ?1").ok()?;
+        let mut rows = stmt.query(params![short]).ok()?;
 
-        if let Some(row) = rows.next()? {
-            let long_url: String = row.get(0)?;
-            Ok(Some(long_url))
+        if let Some(row) = rows.next().ok()? {
+            let long_url: String = row.get(0).ok()?;
+            Some(long_url)
         } else {
-            Ok(None)
+            None
         }
     }
 

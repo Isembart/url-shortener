@@ -67,12 +67,12 @@ export default function ShortenForm() {
           <p className="mt-4 text-center">
             Twój skrócony link:{" "}
             <a
-              href={`${API_URL}/link/${shortenLinkMutation.data.short_url}`}
+              href={`${API_URL}/link/${shortenLinkMutation.data.data}`}
               className="text-blue-500 ml-2"
               target="_blank"
               rel="noopener noreferrer"
             >
-              {API_URL}/link/{shortenLinkMutation.data.short_url}
+              {API_URL}/link/{shortenLinkMutation.data.data}
             </a>
           </p>
         )}

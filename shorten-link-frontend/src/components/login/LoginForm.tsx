@@ -40,7 +40,7 @@ export default function LoginForm() {
         },
         onSuccess: (data) => {
             setLoginPrompt("Logged in!");
-            Auth.setNewToken(data.token);
+            Auth.setNewToken(data.data);
         },
         onError: (error) => {
             setLoginPrompt(error.message);

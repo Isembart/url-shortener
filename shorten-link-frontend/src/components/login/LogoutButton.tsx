@@ -15,12 +15,11 @@ export default function LogoutButton() {
             }
         },
         onSuccess: () => {
-            
+            Auth.setNewToken("");
         }
     });
 
     const logout = () => {
-        Auth.setNewToken("");
         logoutMutation.mutate();
     }
    

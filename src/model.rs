@@ -1,7 +1,11 @@
 
+use axum::extract::FromRequestParts;
+use axum::http::request::Parts;
+use crate::responses::ApiError;
+
+use super::responses::ApiError::AuthError;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use rand::{thread_rng, RngCore};
-use rocket::{http::Status, request::{FromRequest, Outcome}, Request};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
@@ -16,32 +20,32 @@ pub struct Claims{
     pub persistent: bool,
 }
 
-#[derive(Debug)]
-pub struct AuthError();
-
-impl rocket::response::Responder<'_, 'static> for AuthError {
-    fn respond_to(self, _: &'_ rocket::Request) -> rocket::response::Result<'static> {
-        Err(Status::Unauthorized)
-    }
-}
 
 #[derive(Debug)]
 pub struct AuthenticatedUser(pub Claims);
 
 
-#[async_trait]
-impl<'r> FromRequest<'r> for AuthenticatedUser {
-    type Error = AuthError;
+// #[async_trait]
+// impl<'r> FromRequest<'r> for AuthenticatedUser {
+impl<S> FromRequestParts<S> for AuthenticatedUser
+where S: Send + Sync
+{
+    type Rejection = ApiError;
+    // type Error = AuthError;
 
-    async fn from_request(req: &'r Request<'_>) -> rocket::request::Outcome<Self, Self::Error> {
+    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         // Extract the "Authorization" header
-        if let Some(auth_header) = req.headers().get_one("Authorization") {
-            match validate_jwt_token(auth_header) {
-                Ok(claims) => Outcome::Success(AuthenticatedUser(claims)),
-                Err(e) => Outcome::Error((Status::Forbidden, e)),
+        if let Some(auth_header) = parts.headers.get("Authorization") {
+            match auth_header.to_str() {
+                Ok(auth_str) => match validate_jwt_token(auth_str) {
+                    Ok(claims) => Ok(AuthenticatedUser(claims)),
+                    Err(_) => Err(AuthError),
+                },
+                Err(_) => Err(AuthError),
             }
         } else {
-            Outcome::Error((Status::Forbidden, AuthError()))
+            // Outcome::Error((Status::Forbidden, AuthError()))
+            Err(AuthError)
         }
     }
 }
@@ -66,13 +70,13 @@ pub fn get_jwt_encoding_key() -> &'static [u8; 32] {
 }
 
 
-pub fn validate_jwt_token(token: &str) -> Result<Claims, AuthError> {
+pub fn validate_jwt_token(token: &str) -> Result<Claims, ApiError> {
     let decoding_key = DecodingKey::from_secret(get_jwt_encoding_key()); 
     
     let validation = Validation::new(Algorithm::HS256);
     
     match decode::<Claims>(token, &decoding_key, &validation) {
         Ok(token_data) => Ok(token_data.claims),
-        Err(_) => Err(AuthError()),
+        Err(_) => Err(AuthError),
     }
 }
