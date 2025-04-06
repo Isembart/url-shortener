@@ -42,8 +42,8 @@ export const AuthProvider = ({children}: {children: ReactNode}) => {
     const refreshToken = async () => {
         try{
             const response = await API.get(`${API_URL}/refresh`,{withCredentials: true});
-            setToken(response.data.token); 
-            return response.data.token;
+            setToken(response.data.data); 
+            return response.data.data;
 
         } catch{
             setToken("");
@@ -58,7 +58,7 @@ export const AuthProvider = ({children}: {children: ReactNode}) => {
                 if( error.response.status === 403 ){
                     try{
                         const response = await API.get(`${API_URL}/refresh`,{withCredentials: true});
-                        originalRequest.headers.Authorization = `${response.data.token}`;
+                        originalRequest.headers.Authorization = `${response.data.data}`;
                         originalRequest._retry = true;
                         return API(originalRequest);
                     } catch {
