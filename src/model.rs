@@ -1,9 +1,6 @@
-
 use axum::extract::FromRequestParts;
 use axum::http::request::Parts;
 use crate::responses::ApiError;
-
-use super::responses::ApiError::AuthError;
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use rand::{thread_rng, RngCore};
 use serde::{Deserialize, Serialize};
@@ -24,14 +21,10 @@ pub struct Claims{
 #[derive(Debug)]
 pub struct AuthenticatedUser(pub Claims);
 
-
-// #[async_trait]
-// impl<'r> FromRequest<'r> for AuthenticatedUser {
 impl<S> FromRequestParts<S> for AuthenticatedUser
 where S: Send + Sync
 {
     type Rejection = ApiError;
-    // type Error = AuthError;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
         // Extract the "Authorization" header
@@ -39,19 +32,16 @@ where S: Send + Sync
             match auth_header.to_str() {
                 Ok(auth_str) => match validate_jwt_token(auth_str) {
                     Ok(claims) => Ok(AuthenticatedUser(claims)),
-                    Err(_) => Err(AuthError),
+                    Err(_) => Err(ApiError::AuthError),
                 },
-                Err(_) => Err(AuthError),
+                Err(_) => Err(ApiError::AuthError),
             }
         } else {
             // Outcome::Error((Status::Forbidden, AuthError()))
-            Err(AuthError)
+            Err(ApiError::AuthError)
         }
     }
 }
-
-
-
 
 use std::sync::OnceLock;
 
@@ -77,6 +67,6 @@ pub fn validate_jwt_token(token: &str) -> Result<Claims, ApiError> {
     
     match decode::<Claims>(token, &decoding_key, &validation) {
         Ok(token_data) => Ok(token_data.claims),
-        Err(_) => Err(AuthError),
+        Err(_) => Err(ApiError::AuthError),
     }
 }
