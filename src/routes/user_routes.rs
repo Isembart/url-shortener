@@ -15,5 +15,5 @@ async fn get_user_links(user: AuthenticatedUser, State(db): State<Arc<DbConn>>) 
 
 pub fn user_router() -> Router<Arc<DbConn>> {
     Router::new()
-        .route("/links", get(get_user_links))
+        .route("/get-user-links", get(get_user_links))
 }

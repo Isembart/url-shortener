@@ -57,6 +57,6 @@ async fn redirect(State(db): State<Arc<DbConn>>, extract::Path(short_url): extra
 
 pub fn url_shortener_router() -> Router<Arc<DbConn>> {
     Router::new()
-        .route("/shorten", post(shorten_link))
+        .route("/shorten-link", post(shorten_link))
         .route("/link/{short_url}", get(redirect))
 }
