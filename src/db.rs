@@ -13,12 +13,13 @@ pub struct DbConn {
 pub enum UserError {
     UserAlreadyExists,
     InvalidCredentials,
-    DatabaseError(rusqlite::Error),
+    // DatabaseError{err: rusqlite::Error},
+    DatabaseError,
 }
 
 impl From<rusqlite::Error> for UserError {
-    fn from(err: rusqlite::Error) -> Self {
-        UserError::DatabaseError(err)
+    fn from(_: rusqlite::Error) -> Self {
+        UserError::DatabaseError
     }
 }
 
