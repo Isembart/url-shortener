@@ -1,11 +1,13 @@
 import { API, API_URL } from "@/utils/api";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "./ui/card";
+import LinkCard from "./LinkCard";
 
-interface Link {
+export type LinkData = {
     code: string;
     long_url: string;
     short_url: string;
+    name: string;
 }
 
 const fetchUserLinks = async () => {
@@ -18,7 +20,8 @@ const fetchUserLinks = async () => {
     }));
 };
 
-export default function UserLinksList() {
+
+export function UserLinksList() {
     const { data: links, isLoading } = useQuery({
         queryKey: ['userLinks'],
         queryFn: fetchUserLinks,
@@ -34,20 +37,21 @@ export default function UserLinksList() {
     }
 
     return (
-        <Card className="w-1/2 mt-6 bg-white shadow-xl">
+        <Card className="w-1/2 mt-6 bg-white shadow-xl border-none">
             <CardHeader>
-                <h1 className="text-lg text-center">Your links</h1>
+                <h1 className="text-3xl text-center">Your links</h1>
             </CardHeader>
             <CardContent>
                 <ul>
-                    {links.map((link: Link) => (
-                        <li key={link.code}>
-                            <a href={link.long_url} target="_blank" rel="noopener noreferrer">
-                                {link.long_url}
-                            </a>
-                            <span> - {link.code}</span>
-                            <span> - <a href={link.short_url} target="_blank" className="text-blue-500" rel="noopener noreferrer">{link.short_url}</a></span>
-                        </li>
+                    {links.map((link: LinkData) => (
+                        <LinkCard key={link.code} link={link} />
+                        // <li key={link.code}>
+                        //     <a href={link.long_url} target="_blank" rel="noopener noreferrer">
+                        //         {link.long_url}
+                        //     </a>
+                        //     <span> - {link.code}</span>
+                        //     <span> - <a href={link.short_url} target="_blank" className="text-blue-500" rel="noopener noreferrer">{link.short_url}</a></span>
+                        // </li>
                     ))}
                 </ul>
             </CardContent>

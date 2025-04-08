@@ -107,10 +107,23 @@ export default function LoginForm() {
                         </div>
                     </div>
 
-                    <Button onClick={() => {loginMutation.mutate()}} disabled={(registerMutation.isPending || loginMutation.isPending)}> Login </Button>
+                    <Button 
+                        onClick={() => {loginMutation.mutate()}} 
+                        disabled={(registerMutation.isPending || loginMutation.isPending)}
+                        className="bg-white border-gray-800 hover:bg-gray-200 mt-3 p-5"
+                        > 
+                        Login 
+                    </Button>
                     
 
-                    <Button onClick={() => {registerMutation.mutate()}} disabled={(registerMutation.isPending || loginMutation.isPending)}> Create Account </Button>
+                    <Button 
+                        onClick={() => {registerMutation.mutate()}} 
+                        disabled={(registerMutation.isPending || loginMutation.isPending)} 
+                        className="bg-white border-gray-800 hover:bg-gray-200 mt-3 p-5"
+                        > 
+                        Create Account 
+                    </Button>
+
                     <p>{loginPrompt}</p>
             </CardContent>
 

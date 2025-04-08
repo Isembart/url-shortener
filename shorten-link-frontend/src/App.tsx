@@ -1,6 +1,6 @@
 import LogoutButton from "./components/login/LogoutButton";
 import ShortenForm from "./components/ShortenForm";
-import UserLinksList from "./components/UserLinksList";
+import {UserLinksList} from "./components/UserLinksList";
 
 function App() {
   return (

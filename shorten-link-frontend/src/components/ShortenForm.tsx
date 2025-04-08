@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,9 +8,11 @@ import {API, API_URL} from "@/utils/api";
 
 
 
+
 export default function ShortenForm() {
   const [longUrl, setLongUrl] = useState("");
   const [customCode, setCustomCode] = useState("");
+  const qc = useQueryClient();
 
   const shortenLinkMutation = useMutation({
     mutationFn: async () => {
@@ -26,6 +28,7 @@ export default function ShortenForm() {
       // setLongUrl("");
       // setCustomCode("");
       console.log("data: ", data);
+      qc.invalidateQueries({ queryKey: ["userLinks"] });
     },
     onError: (error) => {
     console.log("error: ", error);  
@@ -38,7 +41,7 @@ export default function ShortenForm() {
   };
 
   return (
-    <Card className="max-w-11/12 mx-auto mt-10 p-1 shadow-xl w-xl bg-white">
+    <Card className="max-w-11/12 mx-auto mt-10 p-1 shadow-xl w-xl bg-white border-0 text-center">
       <CardHeader>
         <CardTitle className="text-lg text-center">Skracacz linków</CardTitle>
       </CardHeader>
@@ -57,7 +60,7 @@ export default function ShortenForm() {
             value={customCode}
             onChange={(e) => setCustomCode(e.target.value)}
           />
-          <Button type="submit" disabled={shortenLinkMutation.isPending} className="w-full">
+          <Button type="submit" disabled={shortenLinkMutation.isPending} className="w-1/3 border-1 m-2 hover:bg-gray-200">
             {shortenLinkMutation.isPending ? "Przetwarzanie..." : "Skróć link"}
           </Button>
         </form>
