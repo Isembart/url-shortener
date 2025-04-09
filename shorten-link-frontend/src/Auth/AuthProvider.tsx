@@ -12,11 +12,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
     const authContext = useContext(AuthContext);
-
+    
     if(!authContext){
         throw new Error("useAuth must be used within AuthProvider");
     }
-
+    
     return authContext;
 }
 
@@ -82,7 +82,7 @@ export const AuthProvider = ({children}: {children: ReactNode}) => {
 
     return(
         <AuthContext.Provider value={{token, setNewToken}}>
-            {token!=="" ? children : <LoginForm/>}
+            {token!=="" ? children : <LoginForm/> }
         </AuthContext.Provider>
     )
 };

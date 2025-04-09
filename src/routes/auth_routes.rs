@@ -154,8 +154,8 @@ async fn whoami(user: AuthenticatedUser) -> Result<OkResponse<Claims>, ApiError>
 pub fn auth_router() -> Router<Arc<DbConn>> {
     Router::new()
         .route("/login", post(login))
-        .route("/logout", post(logout))
-        .route("/refresh", post(refresh))
+        .route("/logout", get(logout))
+        .route("/refresh", get(refresh))
         .route("/whoami", get(whoami))
         .route("/create_user", post(create_user))
 }

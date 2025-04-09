@@ -119,8 +119,8 @@ else {
     Write-Host "  .\deploy.ps1 -frontend           # build frontend only"
     Write-Host "  .\deploy.ps1 -backend            # build backend only"
     Write-Host "  .\deploy.ps1 -deploy-only        # only deploy (frontend + backend)"
-    Write-Host "  .\deploy.ps1 -frontend-only-deploy # only deploy frontend"
-    Write-Host "  .\deploy.ps1 -backend-only-deploy  # only deploy backend"
+    Write-Host "  .\deploy.ps1 -frontendOnlyDeploy # only deploy frontend"
+    Write-Host "  .\deploy.ps1 -backendOnlyDeploy  # only deploy backend"
     Write-HOST "  .\deploy.ps1 -norestart          # do not perform restart of service on the remote server, only works with deploying backend"
     exit 1
 }
