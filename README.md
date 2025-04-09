@@ -52,3 +52,7 @@ Start Frontend Dev Server
 ### Merged frontend and backend
 The backend also server files from /url-shortener/public/www directory on default / endpoint. It allows for easier deployment however it's easier to develop with separate frontend dev server. In order to use this functionality you'll need to manually build the frontend and move built files to url-shortener/public/www directory
 
+
+## Contributing
+
+Contributions are always welcome!
