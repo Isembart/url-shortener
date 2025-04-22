@@ -15,15 +15,6 @@ Inside the root of the project you'll need to setup an .env file with these vari
 URL_SHORTENER_PORT=2222
 URL_SHORTENER_ADDRESS=0.0.0.0
 ```
-In order to use deploy.ps1 script you'll need **WSL** installed and have this configuration in the url-shortener/scripts/.env file:
-```
-PROJECT_ROOT_IN_WSL=
-REMOTE_USER=
-REMOTE_HOST=
-REMOTE_PATH=
-SSH_PORT=
-```
-**This script is used for easier deployment and is not required for local usage.**
 
 ## Start Dev Server
 Clone the project
@@ -56,3 +47,14 @@ The backend also server files from /url-shortener/public/www directory on defaul
 ## Contributing
 
 Contributions are always welcome!
+
+## Deployment
+In order to use deploy.ps1 script you'll need **WSL** installed and have this configuration in the url-shortener/scripts/.env file:
+```
+PROJECT_ROOT_IN_WSL=
+REMOTE_USER=
+REMOTE_HOST=
+REMOTE_PATH=
+SSH_PORT=
+```
+**This script is used for easier deployment and is not required for local usage.**
